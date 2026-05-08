@@ -28,22 +28,32 @@ class Fraction{
   }
   _gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){[a,b]=[b,a%b]} return a }
   _reduce(){ const g=this._gcd(this.n,this.d); if(g>1){ this.n/=g; this.d/=g } }
+  isInteger(){ return this.d === 1 }
   add(o){ return new Fraction(this.n*o.d + o.n*this.d, this.d*o.d) }
   sub(o){ return new Fraction(this.n*o.d - o.n*this.d, this.d*o.d) }
   mul(o){ return new Fraction(this.n*o.n, this.d*o.d) }
   div(o){ if(o.n===0) throw new Error('Division by zero'); return new Fraction(this.n*o.d, this.d*o.n) }
+  factorial(){
+    if(!this.isInteger()) throw new Error('階乗は整数にのみ対応しています');
+    if(this.n < 0) throw new Error('階乗は0以上の整数にのみ対応しています');
+    let result = 1;
+    for(let i = 2; i <= this.n; i += 1){
+      result *= i;
+    }
+    return new Fraction(result, 1);
+  }
   toString(){ return this.d===1? String(this.n) : `${this.n}/${this.d}` }
 }
 
 // === Expression evaluation (tokenize -> shunting-yard -> RPN eval) ===
 function tokenize(expr){
   const tokens = [];
-  const re = /\s*([0-9]+|x|\(|\)|\+|\-|\*|\/)/g;
+  const re = /\s*([0-9]+|x|\(|\)|\+|\-|\*|\/|!)/g;
   let m; let prev = null;
   while((m = re.exec(expr)) !== null){
     let t = m[1];
     // handle unary minus: if '-' and previous is null or one of ( '(', '+','-','*','/' )
-    if(t === '-' && (prev === null || ['(','+','-','*','/'].includes(prev))){
+    if(t === '-' && (prev === null || ['(','+','-','*','/','!'].includes(prev))){
       tokens.push('0');
     }
     tokens.push(t);
@@ -57,6 +67,8 @@ function toRPN(tokens){
   const prec = {'+':1,'-':1,'*':2,'/':2};
   for(const t of tokens){
     if(/^[0-9]+$/.test(t) || t==='x'){
+      out.push(t);
+    }else if(t === '!'){
       out.push(t);
     }else if(t in prec){
       while(ops.length && ops[ops.length-1] !== '(' && prec[ops[ops.length-1]] >= prec[t]){
@@ -79,7 +91,11 @@ function evalRPN(rpn, xValue){
   for(const t of rpn){
     if(/^[0-9]+$/.test(t)) stack.push(new Fraction(Number(t),1));
     else if(t === 'x') stack.push(xFrac);
-    else if(['+','-','*','/'].includes(t)){
+    else if(t === '!'){
+      const a = stack.pop();
+      if(!a) throw new Error('Invalid expression');
+      stack.push(a.factorial());
+    }else if(['+','-','*','/'].includes(t)){
       const b = stack.pop(); const a = stack.pop();
       if(!a || !b) throw new Error('Invalid expression');
       let r;
