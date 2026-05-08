@@ -12,6 +12,6 @@ header h1{margin:0;font-size:1.5rem}
 .hidden{display:none}
 .panel{background:var(--card);padding:18px;border-radius:10px;min-width:280px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 .numbers{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
-.numbers button{width:48px;height:40px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer}
+.numbers button{width:48px;height:40px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#111;cursor:pointer}
 button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
 button#cancel{background:#e2e8f0;color:#111;margin-top:8px}
