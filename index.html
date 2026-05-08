@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Math Pocket</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Math Pocket</h1>
+    <p>問題を選んで、1〜13の値を代入して答えを表示します。</p>
+  </header>
+
+  <main>
+    <section id="problems" class="grid"></section>
+  </main>
+
+  <div id="selector" class="overlay hidden">
+    <div class="panel">
+      <h2 id="sel-title">選択</h2>
+      <div id="numbers" class="numbers"></div>
+      <button id="cancel">キャンセル</button>
+    </div>
+  </div>
+
+  <div id="result" class="overlay hidden">
+    <div class="panel">
+      <h2>結果</h2>
+      <p id="result-text"></p>
+      <button id="close-result">閉じる</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
