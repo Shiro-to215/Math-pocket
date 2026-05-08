@@ -131,12 +131,10 @@ function onNumberSelect(n){
   const expr = currentProblem.expr;
   let valueStr;
   try{
-    const frac = evaluateAsFraction(expr);
-    // note: evaluateAsFraction expects x when evaluating, so call rpn with x
-    const result = evalRPN(toRPN(tokenize(expr)), n);
+    const result = evaluateAsFraction(expr, n);
     valueStr = result.toString();
   }catch(e){
-    valueStr = '式の評価に失敗しました';
+    valueStr = '式の評価に失敗しました: ' + e.message;
   }
   resultText.textContent = `式: ${expr}  |  x=${n} → 結果: ${valueStr}`;
   resultEl.classList.remove('hidden');
