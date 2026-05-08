@@ -4,12 +4,30 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Math Pocket</title>
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    :root{
+      --bg:#f7f8fb; --card:#ffffff; --accent:#2b6cb0;
+    }
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'ヒラギノ角ゴシック',Meiryo,sans-serif;background:var(--bg);color:#111;margin:0;padding:24px}
+    header h1{margin:0;font-size:1.5rem}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:16px}
+    .card{background:var(--card);border-radius:8px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.06);text-align:center;cursor:pointer}
+    .card img{max-width:100%;height:120px;object-fit:contain}
+    .card h3{margin:.5rem 0 0;font-size:1rem}
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
+    .hidden{display:none}
+    .panel{background:var(--card);padding:18px;border-radius:10px;min-width:280px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+    .numbers{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+    .numbers button{width:48px;height:40px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#111;cursor:pointer;font-size:16px;line-height:40px;text-align:center;appearance:none}
+    button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+    button#cancel{background:#e2e8f0;color:#111;margin-top:8px}
+  </style>
 </head>
 <body>
   <header>
     <h1>Math Pocket</h1>
-    <p>問題を選んで、1〜13の値を代入して答えを表示します。</p>
+    <p>問題を選んで、1～13の値を代入して答えを表示します。</p>
   </header>
 
   <main>
@@ -32,6 +50,175 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+const problemImgs = {
+  'prob1': '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"><rect fill="#e6f2ff" width="100%" height="100%" rx="12"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28" fill="#1e3a8a">問題1</text><text x="50%" y="72%" dominant-baseline="middle" text-anchor="middle" font-size="14" fill="#1e3a8a">式: 2x+1</text></svg>',
+  'prob2': '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"><rect fill="#fff7ed" width="100%" height="100%" rx="12"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28" fill="#92400e">問題2</text><text x="50%" y="72%" dominant-baseline="middle" text-anchor="middle" font-size="14" fill="#92400e">式: x^2 - 3x + 5</text></svg>',
+  'prob3': '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"><rect fill="#f0fff4" width="100%" height="100%" rx="12"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28" fill="#047857">問題3</text><text x="50%" y="72%" dominant-baseline="middle" text-anchor="middle" font-size="14" fill="#047857">式: (x+2)/3</text></svg>'
+};
+
+const problems = [
+  {id:1, title:'問題1', expr:'2*x + 1', img:'prob1'},
+  {id:2, title:'問題2', expr:'x*x - 3*x + 5', img:'prob2'},
+  {id:3, title:'問題3', expr:'(x+2)/3', img:'prob3'}
+];
+
+const problemsEl = document.getElementById('problems');
+const selector = document.getElementById('selector');
+const numbersEl = document.getElementById('numbers');
+const selTitle = document.getElementById('sel-title');
+const cancelBtn = document.getElementById('cancel');
+const resultEl = document.getElementById('result');
+const resultText = document.getElementById('result-text');
+const closeResultBtn = document.getElementById('close-result');
+
+let currentProblem = null;
+
+// === Fraction utility ===
+class Fraction{
+  constructor(n,d=1){
+    n = Number(n); d = Number(d);
+    if(!Number.isFinite(n) || !Number.isFinite(d)) throw new Error('Invalid fraction');
+    if(d===0) throw new Error('Division by zero');
+    if(d<0){ n=-n; d=-d }
+    this.n = Math.trunc(n);
+    this.d = Math.trunc(d);
+    this._reduce();
+  }
+  _gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){[a,b]=[b,a%b]} return a }
+  _reduce(){ const g=this._gcd(this.n,this.d); if(g>1){ this.n/=g; this.d/=g } }
+  isInteger(){ return this.d === 1 }
+  add(o){ return new Fraction(this.n*o.d + o.n*this.d, this.d*o.d) }
+  sub(o){ return new Fraction(this.n*o.d - o.n*this.d, this.d*o.d) }
+  mul(o){ return new Fraction(this.n*o.n, this.d*o.d) }
+  div(o){ if(o.n===0) throw new Error('Division by zero'); return new Fraction(this.n*o.d, this.d*o.n) }
+  factorial(){
+    if(!this.isInteger()) throw new Error('階乗は整数にのみ対応しています');
+    if(this.n < 0) throw new Error('階乗は0以上の整数にのみ対応しています');
+    let result = 1;
+    for(let i = 2; i <= this.n; i += 1){
+      result *= i;
+    }
+    return new Fraction(result, 1);
+  }
+  toString(){ return this.d===1? String(this.n) : `${this.n}/${this.d}` }
+}
+
+// === Expression evaluation (tokenize -> shunting-yard -> RPN eval) ===
+function tokenize(expr){
+  const tokens = [];
+  const re = /\s*([0-9]+|x|\(|\)|\+|\-|\*|\/|!)/g;
+  let m; let prev = null;
+  while((m = re.exec(expr)) !== null){
+    let t = m[1];
+    // handle unary minus: if '-' and previous is null or one of ( '(', '+','-','*','/' )
+    if(t === '-' && (prev === null || ['(','+','-','*','/','!'].includes(prev))){
+      tokens.push('0');
+    }
+    tokens.push(t);
+    prev = t;
+  }
+  return tokens;
+}
+
+function toRPN(tokens){
+  const out = []; const ops = [];
+  const prec = {'+':1,'-':1,'*':2,'/':2};
+  for(const t of tokens){
+    if(/^[0-9]+$/.test(t) || t==='x'){
+      out.push(t);
+    }else if(t === '!'){
+      out.push(t);
+    }else if(t in prec){
+      while(ops.length && ops[ops.length-1] !== '(' && prec[ops[ops.length-1]] >= prec[t]){
+        out.push(ops.pop());
+      }
+      ops.push(t);
+    }else if(t === '('){ ops.push(t);
+    }else if(t === ')'){
+      while(ops.length && ops[ops.length-1] !== '(') out.push(ops.pop());
+      ops.pop();
+    }
+  }
+  while(ops.length) out.push(ops.pop());
+  return out;
+}
+
+function evalRPN(rpn, xValue){
+  const stack = [];
+  const xFrac = new Fraction(xValue,1);
+  for(const t of rpn){
+    if(/^[0-9]+$/.test(t)) stack.push(new Fraction(Number(t),1));
+    else if(t === 'x') stack.push(xFrac);
+    else if(t === '!'){
+      const a = stack.pop();
+      if(!a) throw new Error('Invalid expression');
+      stack.push(a.factorial());
+    }else if(['+','-','*','/'].includes(t)){
+      const b = stack.pop(); const a = stack.pop();
+      if(!a || !b) throw new Error('Invalid expression');
+      let r;
+      if(t === '+') r = a.add(b);
+      if(t === '-') r = a.sub(b);
+      if(t === '*') r = a.mul(b);
+      if(t === '/') r = a.div(b);
+      stack.push(r);
+    }else{
+      throw new Error('Unknown token: ' + t);
+    }
+  }
+  if(stack.length !== 1) throw new Error('Invalid expression evaluation');
+  return stack[0];
+}
+
+function evaluateAsFraction(expr, x){
+  const tokens = tokenize(expr.replace(/\^/g,'**'));
+  const rpn = toRPN(tokens);
+  return evalRPN(rpn, x);
+}
+
+function renderProblems(){
+  problems.forEach(p=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.innerHTML = problemImgs[p.img];
+    card.addEventListener('click', ()=>openSelector(p));
+    problemsEl.appendChild(card);
+  });
+}
+
+function openSelector(problem){
+  currentProblem = problem;
+  selTitle.textContent = `${problem.title} — 数字を選んでください`;
+  numbersEl.innerHTML = '';
+  for(let i=1;i<=13;i++){
+    const b = document.createElement('button');
+    b.textContent = i;
+    b.addEventListener('click', ()=>onNumberSelect(i));
+    numbersEl.appendChild(b);
+  }
+  selector.classList.remove('hidden');
+}
+
+function onNumberSelect(n){
+  selector.classList.add('hidden');
+  if(!currentProblem) return;
+  const expr = currentProblem.expr;
+  let valueStr;
+  try{
+    const result = evaluateAsFraction(expr, n);
+    valueStr = result.toString();
+  }catch(e){
+    valueStr = '式の評価に失敗しました: ' + e.message;
+  }
+  resultText.textContent = `式: ${expr}  |  x=${n} → 結果: ${valueStr}`;
+  resultEl.classList.remove('hidden');
+}
+
+cancelBtn.addEventListener('click', ()=>{selector.classList.add('hidden'); currentProblem=null});
+closeResultBtn.addEventListener('click', ()=>{resultEl.classList.add('hidden'); currentProblem=null});
+
+renderProblems();
+  </script>
 </body>
 </html>
