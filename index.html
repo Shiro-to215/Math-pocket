@@ -202,6 +202,31 @@
       word-break: break-word;
     }
 
+    #result-value {
+      margin: 14px 0 0;
+      text-align: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      font-weight: 800;
+      letter-spacing: .02em;
+      color: #0f4ca6;
+      line-height: 1.05;
+      text-shadow: 0 10px 20px rgba(15, 76, 166, 0.16);
+      word-break: break-word;
+    }
+
+    #result-meta {
+      margin: 12px 0 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--brand-soft);
+      border: 1px solid #dbe7ff;
+      line-height: 1.55;
+      color: #24416e;
+      font-size: .95rem;
+      word-break: break-word;
+    }
+
     .numbers {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -320,7 +345,8 @@
   <div id="result" class="overlay hidden">
     <div class="panel">
       <h2>結果</h2>
-      <p id="result-text"></p>
+      <p id="result-value">-</p>
+      <p id="result-meta"></p>
       <button id="close-result">閉じる</button>
     </div>
   </div>
@@ -359,7 +385,8 @@ const numbersEl = document.getElementById('numbers');
 const selTitle = document.getElementById('sel-title');
 const cancelBtn = document.getElementById('cancel');
 const resultEl = document.getElementById('result');
-const resultText = document.getElementById('result-text');
+const resultValue = document.getElementById('result-value');
+const resultMeta = document.getElementById('result-meta');
 const closeResultBtn = document.getElementById('close-result');
 
 let currentProblem = null;
@@ -580,7 +607,8 @@ function onNumberSelect(n){
   }catch(e){
     valueStr = '式の評価に失敗しました: ' + e.message;
   }
-  resultText.textContent = `式: ${expr}  |  x=${n} → 結果: ${valueStr}`;
+  resultValue.textContent = valueStr;
+  resultMeta.textContent = `式: ${expr}  |  x=${n}`;
   resultEl.classList.remove('hidden');
 }
 
