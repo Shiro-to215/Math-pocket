@@ -602,7 +602,7 @@ function onNumberSelect(n){
     const result = evaluateAsFraction(currentProblem.expr, n);
     if(result instanceof Fraction){
       valueStr = result.toString();
-      metaText = `小数: ${formatRounded2(result.n / result.d)}`;
+      metaText = result.isInteger() ? '' : `小数: ${formatRounded2(result.n / result.d)}`;
     }else{
       // sqrt などで無理数になる場合は小数第2位まで表示
       valueStr = formatRounded2(result);
