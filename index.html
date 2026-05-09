@@ -73,7 +73,13 @@ const problems = [
   {id:15, title:'問題3', expr:'sqrt(4*x)', img:'common/|^4x.png', difficulty:'普通'},
   {id:16, title:'問題4', expr:'(x-1)*(x-1)*(x-3)', img:'common/(x-1)^2(x-3).png', difficulty:'普通'},
   {id:17, title:'問題5', expr:'(x-7)*(x-7)*(x-7)', img:'common/(x-7)^3.png', difficulty:'普通'},
-  {id:18, title:'問題6', expr:'abs(x*x - 100)', img:'common/|x^2-100|.png', difficulty:'普通'}
+  {id:18, title:'問題6', expr:'abs(x*x - 100)', img:'common/|x^2-100|.png', difficulty:'普通'},
+  {id:19, title:'問題1', expr:'2**(x-5) + 4*x + 3', img:'difficult/2^(x-5)+4x+3.png', difficulty:'難'},
+  {id:20, title:'問題2', expr:'x**3 / 3 + 7*x', img:'difficult/∫(x^2-7)dx.png', difficulty:'難'},
+  {id:21, title:'問題3', expr:'-(x-1)*(x-1)*(x-4)', img:'difficult/-(x-1)^2(x-4).png', difficulty:'難'},
+  {id:22, title:'問題4', expr:'x**3 + x + 1', img:'difficult/(x+1)!|x!+x^3.png', difficulty:'難'},
+  {id:23, title:'問題5', expr:'(5*x + 6)/(x + 2)', img:'difficult/3(x|(1+x|2)).png', difficulty:'難'},
+  {id:24, title:'問題6', expr:'(x + 1) * x / 2', img:'difficult/(x+1)C(x-1).png', difficulty:'難'}
 ];
 
 const difficulties = ['易a', '易b', '普通', '難'];
@@ -109,6 +115,13 @@ class Fraction{
   sub(o){ return new Fraction(this.n*o.d - o.n*this.d, this.d*o.d) }
   mul(o){ return new Fraction(this.n*o.n, this.d*o.d) }
   div(o){ if(o.n===0) throw new Error('Division by zero'); return new Fraction(this.n*o.d, this.d*o.n) }
+  powInt(exp){
+    if(!Number.isInteger(exp)) throw new Error('分数のべき乗は整数指数のみ対応しています');
+    if(exp === 0) return new Fraction(1,1);
+    if(exp > 0) return new Fraction(this.n ** exp, this.d ** exp);
+    const p = -exp;
+    return new Fraction(this.d ** p, this.n ** p);
+  }
   factorial(){
     if(!this.isInteger()) throw new Error('階乗は整数にのみ対応しています');
     if(this.n < 0) throw new Error('階乗は0以上の整数にのみ対応しています');
@@ -124,13 +137,14 @@ class Fraction{
 // === Expression evaluation (tokenize -> shunting-yard -> RPN eval) ===
 function tokenize(expr){
   const tokens = [];
+  const normalized = expr.replace(/\^/g, '**');
   // support numbers, variable x, identifiers (functions), parentheses, operators, factorial
-  const re = /\s*([0-9]+|x|[a-zA-Z_][a-zA-Z0-9_]*|\(|\)|\+|\-|\*|\/|!)/g;
+  const re = /\s*(\*\*|[0-9]+|x|[a-zA-Z_][a-zA-Z0-9_]*|\(|\)|\+|\-|\*|\/|!)/g;
   let m; let prev = null;
-  while((m = re.exec(expr)) !== null){
+  while((m = re.exec(normalized)) !== null){
     let t = m[1];
     // handle unary minus: if '-' and previous is null or one of ( '(', '+','-','*','/', ',' )
-    if(t === '-' && (prev === null || ['(','+','-','*','/','!',','].includes(prev))){
+    if(t === '-' && (prev === null || ['(','+','-','*','/','**','!',','].includes(prev))){
       tokens.push('0');
     }
     tokens.push(t);
@@ -141,7 +155,8 @@ function tokenize(expr){
 
 function toRPN(tokens){
   const out = []; const ops = [];
-  const prec = {'+':1,'-':1,'*':2,'/':2};
+  const prec = {'+':1,'-':1,'*':2,'/':2,'**':3};
+  const rightAssoc = {'**': true};
   const isIdentifier = t => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(t);
   for(const t of tokens){
     if(/^[0-9]+$/.test(t) || t==='x'){
@@ -153,7 +168,12 @@ function toRPN(tokens){
       // function name -> push onto operator stack
       ops.push(t);
     }else if(t in prec){
-      while(ops.length && ops[ops.length-1] !== '(' && (ops[ops.length-1] in prec ? prec[ops[ops.length-1]] >= prec[t] : false)){
+      while(
+        ops.length &&
+        ops[ops.length-1] !== '(' &&
+        (ops[ops.length-1] in prec) &&
+        (rightAssoc[t] ? prec[ops[ops.length-1]] > prec[t] : prec[ops[ops.length-1]] >= prec[t])
+      ){
         out.push(ops.pop());
       }
       ops.push(t);
@@ -201,7 +221,7 @@ function evalRPN(rpn, xValue){
         if(t === 'abs') stack.push(Math.abs(a));
         else stack.push(Math.sqrt(a));
       }
-    }else if(['+','-','*','/'].includes(t)){
+    }else if(['+','-','*','/','**'].includes(t)){
       const b = stack.pop(); const a = stack.pop();
       if(a===undefined || b===undefined) throw new Error('Invalid expression');
       if(a instanceof Fraction && b instanceof Fraction){
@@ -210,6 +230,10 @@ function evalRPN(rpn, xValue){
         if(t === '-') r = a.sub(b);
         if(t === '*') r = a.mul(b);
         if(t === '/') r = a.div(b);
+        if(t === '**'){
+          if(!b.isInteger()) throw new Error('指数は整数で指定してください');
+          r = a.powInt(b.n);
+        }
         stack.push(r);
       }else{
         const an = (a instanceof Fraction) ? (a.n / a.d) : a;
@@ -219,6 +243,7 @@ function evalRPN(rpn, xValue){
         if(t === '-') r = an - bn;
         if(t === '*') r = an * bn;
         if(t === '/') r = an / bn;
+        if(t === '**') r = an ** bn;
         stack.push(r);
       }
     }else{
@@ -230,7 +255,7 @@ function evalRPN(rpn, xValue){
 }
 
 function evaluateAsFraction(expr, x){
-  const tokens = tokenize(expr.replace(/\^/g,'**'));
+  const tokens = tokenize(expr);
   const rpn = toRPN(tokens);
   return evalRPN(rpn, x);
 }
