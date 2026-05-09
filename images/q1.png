@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
-  <rect fill="#e6f2ff" width="100%" height="100%" rx="12"/>
-  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="28" fill="#1e3a8a">問題1</text>
-  <text x="50%" y="72%" dominant-baseline="middle" text-anchor="middle" font-size="14" fill="#1e3a8a">式: 2x+1</text>
-</svg>
