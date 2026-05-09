@@ -192,16 +192,6 @@
       letter-spacing: .02em;
     }
 
-    #result-text {
-      margin: 14px 0;
-      padding: 12px;
-      border-radius: 10px;
-      background: var(--brand-soft);
-      border: 1px solid #dbe7ff;
-      line-height: 1.6;
-      word-break: break-word;
-    }
-
     #result-value {
       margin: 14px 0 0;
       text-align: center;
@@ -554,6 +544,13 @@ function evaluateAsFraction(expr, x){
   return evalRPN(rpn, x);
 }
 
+function formatRounded2(value){
+  if(!Number.isFinite(value)) return String(value);
+  const rounded = Math.round(value * 100) / 100;
+  const safe = Object.is(rounded, -0) ? 0 : rounded;
+  return safe.toFixed(2);
+}
+
 function renderProblems(){
   problemsEl.innerHTML = '';
   const difficulties = ['易a', '易b', '普通', '難'];
@@ -599,16 +596,25 @@ function openSelector(problem){
 function onNumberSelect(n){
   selector.classList.add('hidden');
   if(!currentProblem) return;
-  const expr = currentProblem.expr;
-  let valueStr;
+  let valueStr = '';
+  let metaText = '';
   try{
-    const result = evaluateAsFraction(expr, n);
-    valueStr = result.toString();
+    const result = evaluateAsFraction(currentProblem.expr, n);
+    if(result instanceof Fraction){
+      valueStr = result.toString();
+      metaText = `小数: ${formatRounded2(result.n / result.d)}`;
+    }else{
+      // sqrt などで無理数になる場合は小数第2位まで表示
+      valueStr = formatRounded2(result);
+      metaText = '';
+    }
   }catch(e){
-    valueStr = '式の評価に失敗しました: ' + e.message;
+    valueStr = '計算エラー';
+    metaText = e.message;
   }
   resultValue.textContent = valueStr;
-  resultMeta.textContent = `式: ${expr}  |  x=${n}`;
+  resultMeta.textContent = metaText;
+  resultMeta.style.display = metaText ? 'block' : 'none';
   resultEl.classList.remove('hidden');
 }
 
