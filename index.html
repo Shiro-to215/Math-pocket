@@ -11,7 +11,10 @@
     *{box-sizing:border-box}
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'ヒラギノ角ゴシック',Meiryo,sans-serif;background:var(--bg);color:#111;margin:0;padding:24px}
     header h1{margin:0;font-size:1.5rem}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:16px}
+    .tabs{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+    .tab-btn{background:#ddd;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;font-weight:500}
+    .tab-btn.active{background:var(--accent);color:#fff}
+    .grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;margin-top:16px}
     .card{background:var(--card);border-radius:8px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.06);text-align:center;cursor:pointer}
     .card img{max-width:100%;height:120px;object-fit:contain}
     .card h3{margin:.5rem 0 0;font-size:1rem}
@@ -31,6 +34,7 @@
   </header>
 
   <main>
+    <div id="tabs" class="tabs"></div>
     <section id="problems" class="grid"></section>
   </main>
 
@@ -52,14 +56,18 @@
 
   <script>
 const problems = [
-  {id:1, title:'問題1', expr:'x+1', img:'images/x+1.png'},
-  {id:2, title:'問題2', expr:'x*x - 5', img:'images/x^2-5.png'},
-  {id:3, title:'問題3', expr:'3*x - 5', img:'images/3x-5.png'},
-  {id:4, title:'問題4', expr:'x/4 - 1', img:'images/4x-1.png'},
-  {id:5, title:'問題5', expr:'x*x - 4*x + 4', img:'images/x^2-4x+4.png'},
-  {id:6, title:'問題6', expr:'x*x*x+1', img:'images/x^3+1.png'}
+  {id:1, title:'問題1', expr:'x+1', img:'images/x+1.png', difficulty:'易a'},
+  {id:2, title:'問題2', expr:'x*x - 5', img:'images/x^2-5.png', difficulty:'易a'},
+  {id:3, title:'問題3', expr:'3*x - 5', img:'images/3x-5.png', difficulty:'易a'},
+  {id:4, title:'問題4', expr:'x/4 - 1', img:'images/4x-1.png', difficulty:'易a'},
+  {id:5, title:'問題5', expr:'x*x - 4*x + 4', img:'images/x^2-4x+4.png', difficulty:'易a'},
+  {id:6, title:'問題6', expr:'x*x*x+1', img:'images/x^3+1.png', difficulty:'易a'}
 ];
 
+const difficulties = ['易a', '易b', '普通', '難'];
+let currentDifficulty = '易a';
+
+const tabsEl = document.getElementById('tabs');
 const problemsEl = document.getElementById('problems');
 const selector = document.getElementById('selector');
 const numbersEl = document.getElementById('numbers');
@@ -174,8 +182,25 @@ function evaluateAsFraction(expr, x){
   return evalRPN(rpn, x);
 }
 
+function renderTabs(){
+  tabsEl.innerHTML = '';
+  difficulties.forEach(d=>{
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn';
+    btn.textContent = d;
+    if(d === currentDifficulty) btn.classList.add('active');
+    btn.addEventListener('click', ()=>{
+      currentDifficulty = d;
+      renderTabs();
+      renderProblems();
+    });
+    tabsEl.appendChild(btn);
+  });
+}
+
 function renderProblems(){
-  problems.forEach(p=>{
+  problemsEl.innerHTML = '';
+  problems.filter(p => p.difficulty === currentDifficulty).forEach(p=>{
     const card = document.createElement('div');
     card.className='card';
     card.innerHTML = `<img src="${p.img}" alt="${p.title}"><h3>${p.title}</h3>`;
@@ -215,6 +240,7 @@ function onNumberSelect(n){
 cancelBtn.addEventListener('click', ()=>{selector.classList.add('hidden'); currentProblem=null});
 closeResultBtn.addEventListener('click', ()=>{resultEl.classList.add('hidden'); currentProblem=null});
 
+renderTabs();
 renderProblems();
   </script>
 </body>
