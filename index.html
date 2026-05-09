@@ -11,11 +11,11 @@
     *{box-sizing:border-box}
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'ヒラギノ角ゴシック',Meiryo,sans-serif;background:var(--bg);color:#111;margin:0;padding:24px}
     header h1{margin:0;font-size:1.5rem}
-    .tabs{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
-    .tab-btn{background:#ddd;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;font-weight:500}
-    .tab-btn.active{background:var(--accent);color:#fff}
+    .difficulty-section{margin-top:32px;position:relative}
+    .difficulty-section-title{position:absolute;top:-24px;left:0;background:var(--accent);color:#fff;padding:6px 12px;border-radius:4px;font-weight:700;font-size:1.1rem}
     .grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;margin-top:16px}
-    .card{background:var(--card);border-radius:8px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.06);text-align:center;cursor:pointer}
+    .card{background:var(--card);border-radius:8px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.06);text-align:center;cursor:pointer;position:relative}
+    .difficulty-badge{position:absolute;top:4px;left:4px;background:var(--accent);color:#fff;font-size:0.75rem;padding:2px 6px;border-radius:3px;font-weight:700}
     .card img{max-width:100%;height:120px;object-fit:contain}
     .card h3{margin:.5rem 0 0;font-size:1rem}
     .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)}
@@ -34,7 +34,6 @@
   </header>
 
   <main>
-    <div id="tabs" class="tabs"></div>
     <section id="problems" class="grid"></section>
   </main>
 
@@ -56,18 +55,18 @@
 
   <script>
 const problems = [
-  {id:1, title:'問題1', expr:'x+3', img:'easy-b/x+3.png', difficulty:'易b'},
-  {id:2, title:'問題2', expr:'x*x - 5', img:'easy-b/x^2-5.png', difficulty:'易b'},
-  {id:3, title:'問題3', expr:'3*x - 5', img:'easy-b/3x-5.png', difficulty:'易b'},
-  {id:4, title:'問題4', expr:'x/4 - 1', img:'easy-b/4x-1.png', difficulty:'易b'},
-  {id:5, title:'問題5', expr:'x*x - 4*x + 4', img:'easy-b/x^2-4x+4.png', difficulty:'易b'},
-  {id:6, title:'問題6', expr:'x*x*x+1', img:'easy-b/x^3+1.png', difficulty:'易b'},
-  {id:7, title:'問題1', expr:'x+1', img:'easy-a/x+1.png', difficulty:'易a'},
-  {id:8, title:'問題2', expr:'x*x + 1', img:'easy-a/x^2+1.png', difficulty:'易a'},
-  {id:9, title:'問題3', expr:'2*x + 3', img:'easy-a/2x+3.png', difficulty:'易a'},
-  {id:10, title:'問題4', expr:'x/4 + 2', img:'easy-a/4x+2.png', difficulty:'易a'},
-  {id:11, title:'問題5', expr:'x*x - 4*x + 4', img:'easy-a/x^2-4x+4.png', difficulty:'易a'},
-  {id:12, title:'問題6', expr:'x*x*x', img:'easy-a/x^3.png', difficulty:'易a'},
+  {id:1, title:'問題1', expr:'x+1', img:'easy-a/x+1.png', difficulty:'易a'},
+  {id:2, title:'問題2', expr:'x*x + 1', img:'easy-a/x^2+1.png', difficulty:'易a'},
+  {id:3, title:'問題3', expr:'2*x + 3', img:'easy-a/2x+3.png', difficulty:'易a'},
+  {id:4, title:'問題4', expr:'x/4 + 2', img:'easy-a/4x+2.png', difficulty:'易a'},
+  {id:5, title:'問題5', expr:'x*x - 4*x + 4', img:'easy-a/x^2-4x+4.png', difficulty:'易a'},
+  {id:6, title:'問題6', expr:'x*x*x', img:'easy-a/x^3.png', difficulty:'易a'},
+  {id:7, title:'問題1', expr:'x+3', img:'easy-b/x+3.png', difficulty:'易b'},
+  {id:8, title:'問題2', expr:'x*x - 5', img:'easy-b/x^2-5.png', difficulty:'易b'},
+  {id:9, title:'問題3', expr:'3*x - 5', img:'easy-b/3x-5.png', difficulty:'易b'},
+  {id:10, title:'問題4', expr:'x/4 - 1', img:'easy-b/4x-1.png', difficulty:'易b'},
+  {id:11, title:'問題5', expr:'x*x - 4*x + 4', img:'easy-b/x^2-4x+4.png', difficulty:'易b'},
+  {id:12, title:'問題6', expr:'x*x*x+1', img:'easy-b/x^3+1.png', difficulty:'易b'},
   {id:13, title:'問題1', expr:'(3*x - 5)/(2*x - 1)/(x + 1)', img:'common/3x-5|(2x-1)(x+1).png', difficulty:'普通'},
   {id:14, title:'問題2', expr:'x*x*x - x*x', img:'common/x^3-x^2.png', difficulty:'普通'},
   {id:15, title:'問題3', expr:'sqrt(4*x)', img:'common/|^4x.png', difficulty:'普通'},
@@ -82,10 +81,6 @@ const problems = [
   {id:24, title:'問題6', expr:'(x + 1) * x / 2', img:'difficult/(x+1)C(x-1).png', difficulty:'難'}
 ];
 
-const difficulties = ['易a', '易b', '普通', '難'];
-let currentDifficulty = '易a';
-
-const tabsEl = document.getElementById('tabs');
 const problemsEl = document.getElementById('problems');
 const selector = document.getElementById('selector');
 const numbersEl = document.getElementById('numbers');
@@ -260,30 +255,35 @@ function evaluateAsFraction(expr, x){
   return evalRPN(rpn, x);
 }
 
-function renderTabs(){
-  tabsEl.innerHTML = '';
-  difficulties.forEach(d=>{
-    const btn = document.createElement('button');
-    btn.className = 'tab-btn';
-    btn.textContent = d;
-    if(d === currentDifficulty) btn.classList.add('active');
-    btn.addEventListener('click', ()=>{
-      currentDifficulty = d;
-      renderTabs();
-      renderProblems();
-    });
-    tabsEl.appendChild(btn);
-  });
-}
-
 function renderProblems(){
   problemsEl.innerHTML = '';
-  problems.filter(p => p.difficulty === currentDifficulty).forEach(p=>{
-    const card = document.createElement('div');
-    card.className='card';
-    card.innerHTML = `<img src="${p.img}" alt="${p.title}"><h3>${p.title}</h3>`;
-    card.addEventListener('click', ()=>openSelector(p));
-    problemsEl.appendChild(card);
+  const difficulties = ['易a', '易b', '普通', '難'];
+  difficulties.forEach(diff => {
+    const filtered = problems.filter(p => p.difficulty === diff);
+    if(filtered.length > 0){
+      const section = document.createElement('div');
+      section.className = 'difficulty-section';
+      section.style.paddingTop = '24px';
+      const title = document.createElement('div');
+      title.className = 'difficulty-section-title';
+      title.textContent = diff;
+      section.appendChild(title);
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+      grid.style.gap = '16px';
+      grid.style.marginTop = '16px';
+      filtered.forEach(p => {
+        const card = document.createElement('div');
+        card.className='card';
+        card.innerHTML = `<img src="${p.img}" alt="${p.title}"><h3>${p.title}</h3>`;
+        card.addEventListener('click', ()=>openSelector(p));
+        grid.appendChild(card);
+      });
+      section.appendChild(grid);
+      problemsEl.appendChild(section);
+    }
   });
 }
 
@@ -318,7 +318,6 @@ function onNumberSelect(n){
 cancelBtn.addEventListener('click', ()=>{selector.classList.add('hidden'); currentProblem=null});
 closeResultBtn.addEventListener('click', ()=>{resultEl.classList.add('hidden'); currentProblem=null});
 
-renderTabs();
 renderProblems();
   </script>
 </body>
